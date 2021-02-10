@@ -1,126 +1,159 @@
 public class ArrayDeque<T> {
-	public class Node{
-		public T[] item;
-		public Node next;
-		public Node prev;
 
-		public Node(T[] item, Node next, Node prev) {
-			this.item = item;
-			this.next = next;
-			this.prev = prev;
-		}
-
-		public Node(T[] item) {
-			this.item = item;
-			this.next = null;
-			this.prev = null;
-		}
-	}
-
+	private int nextHead;
+	private int nextTail;
 	private int size;
-	private final Node sentinel;
+	private T[] array;
+	private double UTILIZATION = 0.25;
+	private int SCALE_FACTOR = 2;
 
 	public ArrayDeque(){
-		sentinel = new Node(null);
-		sentinel.next = sentinel;
-		sentinel.prev = sentinel;
+		array = (T[]) new Object[8];
 		size = 0;
+		nextHead = 4; //initial index
+		nextTail = 5;
 	}
 
-	public void addFirst(T[] item){
-		Node first = new Node(item, this.sentinel.next, this.sentinel);
-		if (sentinel.next == sentinel)
-			sentinel.prev = first;
-		sentinel.next.prev = first;
-		sentinel.next = first;
+	public void addFirst(T item){
+		if (size >= array.length) {
+			resizeArray(array.length * SCALE_FACTOR);
+		}
+		array[nextHead] = item;
+		nextHead = getLeftIndex(nextHead);
 		size = size + 1;
 	}
 
-	public void addLast(T[] item){
-		item[size - 1] = ;
+	private void resizeArray(int newLength){
+		final T[] temp = (T[]) new Object[newLength];
+		int head = getRightIndex(nextHead);
+		int tail = getLeftIndex(nextTail);
+		if (head < tail) {
+			System.arraycopy(array, head, temp, 0, tail - head + 1);
+		}
+		else {
+			System.arraycopy(array, head, temp, 0, array.length-head);
+			System.arraycopy(array, 0, temp, array.length-head, tail+1);
+		}
+		array = temp;
+		nextHead = getLeftIndex(0);
+		nextTail = size;
+	}
+
+	private int getLeftIndex(int index){
+		if (index == 0)
+			return array.length-1;
+		else {
+			return index - 1;
+		}
+	}
+
+	private int getRightIndex(int index){
+		if (index == array.length-1)
+			return 0;
+		else {
+			return index + 1;
+		}
+	}
+
+	public void addLast(T item){
+		if (size >= array.length) {
+			resizeArray(array.length * SCALE_FACTOR);
+		}
+		array[nextTail] = item;
+		nextTail = getRightIndex(nextTail);
+		size = size + 1;
 	}
 
 	public boolean isEmpty(){
-		return sentinel.next == sentinel;
+		return size == 0;
 	}
 
 	public int size(){return this.size;}
 
 	public void printDeque(){
-		Node temp = sentinel.next;
-		while(temp != sentinel) {
-			System.out.println(temp.item);
-			temp = temp.next;
+		for(int i=0; i< array.length; i++){
+			System.out.println(array[i]);
 		}
 		System.out.println("\n");
 	}
 
 	public T removeFirst(){
-		if (sentinel.next == sentinel)
+		if (size == 0)
 			return null;
-		sentinel.next = sentinel.next.next;
-		sentinel.next.prev = sentinel;
-		if (sentinel.next == sentinel)
-			return null;
-		return sentinel.next.item;
+		int head = getRightIndex(nextHead);
+		array[head] = null;
+		nextHead = head;
+		T first = array[getRightIndex(nextHead)];
+		size = size - 1;
+		if (size < Math.round(UTILIZATION*array.length)) {
+			if (array.length>8 && size != 0) {
+				resizeArray(Math.round(array.length / SCALE_FACTOR));
+			}
+		}
+		return first;
 	}
 
 	public T removeLast(){
-		if (sentinel.prev == sentinel)
+		if (size == 0)
 			return null;
-		sentinel.prev = sentinel.prev.prev;
-		sentinel.prev.next = sentinel;
-		if (sentinel.prev == sentinel)
-			return null;
-		return sentinel.prev.item;
+		int tail = getLeftIndex(nextTail);
+		array[tail] = null;
+		nextTail = tail;
+		T last = array[getLeftIndex(nextTail)];
+		size = size - 1;
+		if (size < Math.round(UTILIZATION*array.length)) {
+			if (array.length>8 && size != 0) {
+				resizeArray(Math.round(array.length / SCALE_FACTOR));
+			}
+		}
+		return last;
 	}
 
 	public T get(int index){
-		if(index >= size)
+		if(size == 0)
 			return null;
-		Node temp = sentinel.next;
-		for(int i=0; i<index; i++){
-			temp = temp.next;
-		}
-		return temp.item;
-	}
-
-	public T getRecursive(int index){
-		if (sentinel.next == sentinel)
-			return null;
-		return getRecursive(index, sentinel.next);
-	}
-
-	public T getRecursive(int index, Node N){
-		if (index != 0){
-			return getRecursive(index -1, N.next);
-		}
-		else
-			return N.item;
+		return array[index];
 	}
 
 	public static void main(String[] args) {
 		System.out.println("Running tests.\n");
-		ArrayDeque<Integer> intlist = new ArrayDeque<>();
-		System.out.println(intlist.isEmpty());
-		System.out.println(intlist.removeFirst());
-		intlist.addFirst(20);
-		intlist.addFirst(10);
-		intlist.addLast(30);
-		System.out.println("size :" + intlist.size());
-		intlist.printDeque();
-		System.out.println(intlist.get(0));
-		System.out.println("Recursive");
-		System.out.println(intlist.getRecursive(0));
-		System.out.println(intlist.getRecursive(1));
-		System.out.println(intlist.getRecursive(2));
-		System.out.println("End");
-		System.out.println(intlist.removeFirst());
-		System.out.println(intlist.removeLast());
-		System.out.println(intlist.removeFirst());
-		System.out.println(intlist.get(10));
-		System.out.println(intlist.get(0));
-		intlist.printDeque();
+		ArrayDeque<Integer> deque = new ArrayDeque<>();
+		System.out.println(deque.isEmpty());
+		System.out.println(deque.removeFirst());
+		deque.addFirst(20);
+		deque.addFirst(10);
+		deque.removeFirst();
+		deque.addFirst(10);
+		deque.addLast(30);
+		deque.removeLast();
+		System.out.println(deque.isEmpty());
+		deque.removeLast();
+		deque.removeFirst();
+		System.out.println("size :" + deque.size());
+		deque.printDeque();
+		deque.addFirst(20);
+		deque.addFirst(10);
+		deque.addLast(30);
+		deque.addLast(40);
+		deque.addLast(50);
+		deque.addLast(60);
+		System.out.println("size :" + deque.size());
+		deque.addLast(70);
+		deque.addLast(80);
+		deque.addLast(90);
+		System.out.println("size :" + deque.size());
+		deque.addLast(100);
+		deque.printDeque();
+		deque.removeFirst();
+		deque.removeFirst();
+		deque.removeFirst();
+		deque.removeFirst();
+		deque.removeFirst();
+		deque.removeFirst();
+		deque.removeFirst();
+		deque.removeFirst();
+		deque.printDeque();
+		System.out.println("size :" + deque.size());
 //		addIsEmptySizeTest();
 //		addRemoveTest();
 	}
